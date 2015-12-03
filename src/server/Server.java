@@ -1,7 +1,7 @@
 package server;
 
-import callback.ICallbackClient;
-import callback.ICallbackServer;
+import callback.IClient;
+import callback.IServer;
 import remote_journal.JournalManager;
 import remote_journal.JournalObserver;
 import journal.*;
@@ -15,15 +15,14 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
 
-public class CallbackServer implements Serializable, ICallbackServer, JournalObserver {
+public class Server implements Serializable, IServer, JournalObserver {
     ConcurrentHashMap<String, String> users_data;
     ConcurrentHashMap<String, IJournalManager> jManagers;
-    ConcurrentHashMap<String, ICallbackClient> ui;
-    ConcurrentHashMap<String, ICallbackClient> nSystems;
+    ConcurrentHashMap<String, IClient> ui;
+    ConcurrentHashMap<String, IClient> nSystems;
 
-    public CallbackServer() {
+    public Server() {
         jManagers = new ConcurrentHashMap<>();
         nSystems = new ConcurrentHashMap<>();
         ui = new ConcurrentHashMap<>();
@@ -35,7 +34,6 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
                         .forEach(user ->
                         {
                             users_data.put(user.getLogin(), user.getPass());
-                            System.out.println("user = " + user.getLogin() + " pass = " + user.getPass());
                         });
             }
         }
@@ -44,14 +42,13 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
         }
     }
 
-
     public static void main(String[] args) {
         try {
-            CallbackServer server  = new CallbackServer();
-            ICallbackServer stub = (ICallbackServer) UnicastRemoteObject.exportObject(server, 0);
+            Server server  = new Server();
+            IServer stub = (IServer) UnicastRemoteObject.exportObject(server, 0);
             Registry registry = LocateRegistry.createRegistry(7777);
             registry.rebind("IAuthorizationService", stub);
-            System.out.println("CallbackServer is ready");
+            System.out.println("Server is ready");
 
             while (true)
             {
@@ -65,8 +62,7 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
     }
 
     @Override
-    public boolean registerUserInterface(ICallbackClient client) throws RemoteException {
-        System.out.println("try to register");
+    public synchronized boolean registerUI(IClient client) throws RemoteException {
         boolean isAuthorized = false;
         String login = client.getLogin();
         String pass = client.getPassword();
@@ -74,10 +70,7 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
         {
             if (users_data.get(login).equals(pass))
             {
-                if(!ui.containsKey(login))
-                {
-                    ui.put(login,client);
-                }
+                ui.put(login,client);
                 if(!jManagers.containsKey(login))
                 {
                     try {
@@ -96,7 +89,7 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
         return isAuthorized;
     }
 
-    private void createJournalManager(String login) throws RemoteException {
+    private synchronized void createJournalManager(String login) throws RemoteException {
         JournalManager jm = new JournalManager(login);
         jm.registerObserver(this);
         jManagers.put(login,jm);
@@ -106,7 +99,7 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
     }
 
     @Override
-    public boolean registerNotificationSystem(ICallbackClient client) throws RemoteException {
+    public synchronized boolean registerNotificationSystem(IClient client) throws RemoteException {
         boolean isAuthorized = false;
         String login = client.getLogin();
         String pass = client.getPassword();
@@ -114,10 +107,7 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
         {
             if (users_data.get(login).equals(pass))
             {
-                if(!nSystems.containsKey(login))
-                {
-                    nSystems.put(login,client);
-                }
+                nSystems.put(login,client);
                 if(!jManagers.containsKey(login))
                 {
                     try {
@@ -137,7 +127,7 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
     }
 
     @Override
-    public boolean newUser(ICallbackClient client) {
+    public synchronized boolean newUser(IClient client) {
         boolean isRegistered = false;
         String login = null;
         String pass = null;
@@ -159,7 +149,7 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
     }
 
     @Override
-    public boolean unregisterUserInterface(ICallbackClient client) throws RemoteException {
+    public synchronized boolean unregisterUI(IClient client) throws RemoteException {
         if(client != null) {
             String login = client.getLogin();
             if(ui.containsKey(login))
@@ -175,7 +165,7 @@ public class CallbackServer implements Serializable, ICallbackServer, JournalObs
     }
 
     @Override
-    public boolean unregisterNotificationSystem(ICallbackClient client) throws RemoteException {
+    public synchronized boolean unregisterNotificationSystem(IClient client) throws RemoteException {
         if(client != null) {
             String login = client.getLogin();
             if(nSystems.containsKey(login))

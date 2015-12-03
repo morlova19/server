@@ -43,14 +43,14 @@ public class JournalManager implements IJournalManager, Serializable {
         writeJournal();
     }
 
-    public void add(Task task)  {
+    public synchronized void add(Task task)  {
         if(task != null) {
             journal.addTask(task);
             writeJournal();
             observer.updateNotificationSystem(login);
         }
     }
-    public void delete(int id)  {
+    public synchronized void delete(int id)  {
         journal.deleteTask(id);
         writeJournal();
         observer.updateNotificationSystem(login);
