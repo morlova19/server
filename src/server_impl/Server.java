@@ -1,7 +1,7 @@
-package server;
+package server_impl;
 
-import callback.IClient;
-import callback.IServer;
+import client.IClient;
+import server.IServer;
 import remote_journal.JournalManager;
 import remote_journal.JournalObserver;
 import journal.*;
@@ -31,10 +31,7 @@ public class Server implements Serializable, IServer, JournalObserver {
         if(users != null) {
             if (!users.isEmpty()) {
                 users.stream()
-                        .forEach(user ->
-                        {
-                            users_data.put(user.getLogin(), user.getPass());
-                        });
+                        .forEach(user -> users_data.put(user.getLogin(), user.getPass()));
             }
         }
         else {

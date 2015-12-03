@@ -1,4 +1,6 @@
-package callback;
+package server;
+
+import client.IClient;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

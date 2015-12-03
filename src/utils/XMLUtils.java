@@ -23,19 +23,16 @@ public class XMLUtils {
         Vector<User> users1 = new Vector<>();
         stream.alias("users", users1.getClass());
         try {
-            users1 = (Vector<User>) stream.fromXML(new FileInputStream(System.getProperty("user.home") + "/server/users.xml"));
-            System.out.println("users count = " + users1.size());
+            users1 = (Vector<User>) stream.fromXML(new FileInputStream(System.getProperty("user.home") + "../server_impl/users.xml"));
             users.addAll(users1);
         } catch (FileNotFoundException e) {
-            System.out.println("file not found");
             writeUsers();
         }
-        //TODO:read users
         return users;
     }
     public static synchronized User getUser(String login)
     {
-        User u = null;
+        User u ;
         try {
              u = users.stream()
                     .filter(user -> user.getLogin().equals(login))
@@ -43,7 +40,7 @@ public class XMLUtils {
             return u;
         }catch (NoSuchElementException e)
         {
-            return u;
+            return null;
         }
     }
     public static synchronized void newUser(String login,String pass)
@@ -77,13 +74,12 @@ public class XMLUtils {
         Vector<User> users1 = new Vector<>();
         users1.addAll(users);
         stream.alias("users", users1.getClass());
-        File dir = new File(System.getProperty("user.home") + "/server/");
+        File dir = new File(System.getProperty("user.home") + "/server_impl/");
         if(!dir.exists())
         {
             dir.mkdir();
         }
         File file = new File(dir + "/users.xml");
-
         try {
             if(!file.exists())
             {

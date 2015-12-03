@@ -1,4 +1,4 @@
-package callback;
+package client;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
