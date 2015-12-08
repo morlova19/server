@@ -6,6 +6,7 @@ import remote_journal.JournalManager;
 import remote_journal.JournalObserver;
 import journal.*;
 import to.User;
+import utils.DecryptionUtil;
 import utils.XMLUtils;
 
 import java.io.Serializable;
@@ -16,13 +17,28 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * Server class.
+ */
 public class Server implements Serializable, IServer, JournalObserver {
+    /**
+     * Logins and passwords of users.
+     */
     ConcurrentHashMap<String, String> users_data;
+    /**
+     * Journal managers of users.
+     */
     ConcurrentHashMap<String, IJournalManager> jManagers;
+    /**
+     * Registered user interfaces.
+     */
     ConcurrentHashMap<String, IClient> ui;
+    /**
+     * Registered notification systems.
+     */
     ConcurrentHashMap<String, IClient> nSystems;
-
     public Server() {
+        DecryptionUtil.configKeys();
         jManagers = new ConcurrentHashMap<>();
         nSystems = new ConcurrentHashMap<>();
         ui = new ConcurrentHashMap<>();
@@ -39,23 +55,9 @@ public class Server implements Serializable, IServer, JournalObserver {
         }
     }
 
-    public static void main(String[] args) {
-        try {
-            Server server  = new Server();
-            IServer stub = (IServer) UnicastRemoteObject.exportObject(server, 0);
-            Registry registry = LocateRegistry.createRegistry(7777);
-            registry.rebind("IAuthorizationService", stub);
-            System.out.println("Server is ready");
-
-            while (true)
-            {
-
-            }
-
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-
+    @Override
+    public String getPublicKey() {
+        return DecryptionUtil.getPublicKey();
     }
 
     @Override
@@ -65,7 +67,10 @@ public class Server implements Serializable, IServer, JournalObserver {
         String pass = client.getPassword();
         if(users_data.containsKey(login))
         {
-            if (users_data.get(login).equals(pass))
+            String received_decrypted = DecryptionUtil.decrypt(pass);
+            String right_decrypted = DecryptionUtil.decrypt(users_data.get(login));
+            assert right_decrypted != null;
+            if (right_decrypted.equals(received_decrypted))
             {
                 ui.put(login,client);
                 if(!jManagers.containsKey(login))
@@ -86,6 +91,11 @@ public class Server implements Serializable, IServer, JournalObserver {
         return isAuthorized;
     }
 
+    /**
+     * Creates anf puts user's journal manager into rmi registry.
+     * @param login user's login.
+     * @throws RemoteException
+     */
     private synchronized void createJournalManager(String login) throws RemoteException {
         JournalManager jm = new JournalManager(login);
         jm.registerObserver(this);
@@ -177,7 +187,6 @@ public class Server implements Serializable, IServer, JournalObserver {
         return false;
     }
 
-
     @Override
     public void updateUserInterface(String login) {
         if(ui.containsKey(login))
@@ -200,5 +209,23 @@ public class Server implements Serializable, IServer, JournalObserver {
                 System.out.println(e.getMessage());
             }
         }
+    }
+
+    public static void main(String[] args) {
+        try {
+            Server server  = new Server();
+            IServer stub = (IServer) UnicastRemoteObject.exportObject(server, 0);
+            Registry registry = LocateRegistry.createRegistry(7777);
+            registry.rebind("IAuthorizationService", stub);
+            System.out.println("Server is ready");
+            while (true)
+            {
+
+            }
+
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
     }
 }

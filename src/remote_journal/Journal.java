@@ -20,10 +20,18 @@ public class Journal implements Serializable {
      * List of completed tasks.
      */
     private CopyOnWriteArrayList<Task> completedTasks = new CopyOnWriteArrayList<>();
-    private int task_id;
 
-    public void setTask_id(int task_id) {
-        this.task_id = task_id;
+    /**
+     * Last generated id for task.
+     */
+    private int generated_task_id;
+
+    /**
+     * Sets {@link #generated_task_id}.
+     * @param generated_task_id new value of last generated id.
+     */
+    public void setGenerated_task_id(int generated_task_id) {
+        this.generated_task_id = generated_task_id;
     }
     /**
      * Gets task by identifier.
@@ -51,7 +59,7 @@ public class Journal implements Serializable {
      */
     void addTask(Task newTask) {
         if(currentTasks != null) {
-            newTask.setID(task_id++);
+            newTask.setID(generated_task_id++);
             currentTasks.add(newTask);
         }
     }

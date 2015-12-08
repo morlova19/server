@@ -2,7 +2,6 @@ package remote_journal;
 
 import journal.IJournalManager;
 import journal.Task;
-import to.User;
 import utils.XMLUtils;
 
 import java.io.Serializable;
@@ -85,12 +84,7 @@ public class JournalManager implements IJournalManager, Serializable {
      * Writes journal.
      */
     public void writeJournal() {
-        User user = XMLUtils.getUser(login);
-        CopyOnWriteArrayList<Task> tasks = journal.getCurrentTasks();
-        user.setCurrent_tasks(tasks);
-        tasks = journal.getCompletedTasks();
-        user.setCompleted_tasks(tasks);
-        XMLUtils.writeUser(user);
+        XMLUtils.writeUserTasks(this.login,journal.getCurrentTasks(),journal.getCompletedTasks());
     }
     /**
      * Reads journal.
@@ -99,27 +93,24 @@ public class JournalManager implements IJournalManager, Serializable {
     public Journal readJournal()  {
             Journal journal = new Journal();
             if(!this.login.isEmpty()) {
-            User user = XMLUtils.getUser(this.login);
-                if(user != null) {
-                    CopyOnWriteArrayList<Task> cur_tasks = user.getCurrent_tasks();
-                    journal.setCurrentTasks(cur_tasks);
-                    CopyOnWriteArrayList<Task> completed_tasks = user.getCompleted_tasks();
-                    journal.setCompletedTasks(completed_tasks);
-                    int max1 = 0;
-                    int max2 = 0;
-                    if (!completed_tasks.isEmpty()) {
+                CopyOnWriteArrayList<Task> cur_tasks = XMLUtils.getCurrentTasks(this.login);
+                journal.setCurrentTasks(cur_tasks);
+                CopyOnWriteArrayList<Task> completed_tasks = XMLUtils.getCompletedTasks(this.login);
+                journal.setCompletedTasks(completed_tasks);
+                int max1 = 0;
+                int max2 = 0;
+                if (!completed_tasks.isEmpty()) {
                         max1 = journal.getCompletedTasks()
                                 .stream()
                                 .mapToInt(Task::getID)
                                 .max().getAsInt();
-                    }
-                    if (!cur_tasks.isEmpty()) {
+                }
+                if (!cur_tasks.isEmpty()) {
                         max2 = journal.getCurrentTasks()
                                 .stream()
                                 .mapToInt(Task::getID).max().getAsInt();
-                    }
-                    journal.setTask_id(Math.max(max1, max2) + 1);
                 }
+                journal.setGenerated_task_id(Math.max(max1, max2) + 1);
         }
         return journal;
     }
