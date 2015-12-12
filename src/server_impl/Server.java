@@ -7,8 +7,11 @@ import remote_journal.JournalObserver;
 import journal.*;
 import to.User;
 import utils.DecryptionUtil;
+import utils.Icon;
 import utils.XMLUtils;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -37,6 +40,7 @@ public class Server implements Serializable, IServer, JournalObserver {
      * Registered notification systems.
      */
     ConcurrentHashMap<String, IClient> nSystems;
+
     public Server() {
         DecryptionUtil.configKeys();
         jManagers = new ConcurrentHashMap<>();
@@ -69,6 +73,7 @@ public class Server implements Serializable, IServer, JournalObserver {
         {
             String received_decrypted = DecryptionUtil.decrypt(pass);
             String right_decrypted = DecryptionUtil.decrypt(users_data.get(login));
+            System.out.println(" recieved = " + received_decrypted + "=====" + right_decrypted);
             assert right_decrypted != null;
             if (right_decrypted.equals(received_decrypted))
             {
@@ -91,19 +96,6 @@ public class Server implements Serializable, IServer, JournalObserver {
         return isAuthorized;
     }
 
-    /**
-     * Creates anf puts user's journal manager into rmi registry.
-     * @param login user's login.
-     * @throws RemoteException
-     */
-    private synchronized void createJournalManager(String login) throws RemoteException {
-        JournalManager jm = new JournalManager(login);
-        jm.registerObserver(this);
-        jManagers.put(login,jm);
-        Registry registry = LocateRegistry.getRegistry(7777);
-        IJournalManager stub = (IJournalManager) UnicastRemoteObject.exportObject(jm, 0);
-        registry.rebind(login,stub);
-    }
 
     @Override
     public synchronized boolean registerNotificationSystem(IClient client) throws RemoteException {
@@ -112,7 +104,10 @@ public class Server implements Serializable, IServer, JournalObserver {
         String pass = client.getPassword();
         if(users_data.containsKey(login))
         {
-            if (users_data.get(login).equals(pass))
+            String received_decrypted = DecryptionUtil.decrypt(pass);
+            String right_decrypted = DecryptionUtil.decrypt(users_data.get(login));
+            assert right_decrypted != null;
+            if (right_decrypted.equals(received_decrypted))
             {
                 nSystems.put(login,client);
                 if(!jManagers.containsKey(login))
@@ -217,15 +212,39 @@ public class Server implements Serializable, IServer, JournalObserver {
             IServer stub = (IServer) UnicastRemoteObject.exportObject(server, 0);
             Registry registry = LocateRegistry.createRegistry(7777);
             registry.rebind("IAuthorizationService", stub);
-            System.out.println("Server is ready");
-            while (true)
+            if(SystemTray.isSupported())
             {
-
+                SystemTray tray = SystemTray.getSystemTray();
+                Image img = Icon.getIcon();
+                PopupMenu popupMenu = new PopupMenu();
+                MenuItem stop = new MenuItem("stop");
+                stop.addActionListener(e -> System.exit(1));
+                popupMenu.add(stop);
+                TrayIcon icon = new TrayIcon(img,"Server",popupMenu);
+                icon.setImageAutoSize(true);
+                try {
+                    tray.add(icon);
+                } catch (AWTException e) {
+                    JOptionPane.showMessageDialog(new JFrame(),"Cannot add icon to system tray","Error",JOptionPane.ERROR_MESSAGE);
+                }
+                icon.displayMessage("Task Manager Server","Server is running", TrayIcon.MessageType.INFO);
             }
-
         } catch (RemoteException e) {
             e.printStackTrace();
         }
 
+    }
+    /**
+     * Creates anf puts user's journal manager into rmi registry.
+     * @param login user's login.
+     * @throws RemoteException
+     */
+    private synchronized void createJournalManager(String login) throws RemoteException {
+        JournalManager jm = new JournalManager(login);
+        jm.registerObserver(this);
+        jManagers.put(login,jm);
+        Registry registry = LocateRegistry.getRegistry(7777);
+        IJournalManager stub = (IJournalManager) UnicastRemoteObject.exportObject(jm, 0);
+        registry.rebind(login,stub);
     }
 }

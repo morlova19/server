@@ -44,16 +44,6 @@ public class XMLUtils {
      */
     private static  String COMPLETED_TASKS_FILE;
     /**
-     * Initializes paths of xml files.
-     */
-    private synchronized static void configPaths() {
-        PATHNAME = System.getProperty("user.home") + "/server_impl/";
-        USERS_FILE = PATHNAME + "users.xml";
-        CURRENT_TASKS_FILE = PATHNAME + "current.xml";
-        COMPLETED_TASKS_FILE = PATHNAME +"completed.xml";
-    }
-
-    /**
      * Gets users list.
      * @return list with users.
      */
@@ -62,49 +52,6 @@ public class XMLUtils {
         configPaths();
         readUserFromXML();
         return users;
-    }
-    /**
-     * Reads user, its current and completed tasks from files.
-     */
-    private static synchronized void readUserFromXML() {
-        XStream xstream = getXStream();
-        users = new CopyOnWriteArrayList<>();
-        users_current_tasks = new CopyOnWriteArrayList<>();
-        users_completed_tasks = new CopyOnWriteArrayList<>();
-        try {
-            users = (CopyOnWriteArrayList) xstream.fromXML(new FileInputStream(USERS_FILE));
-            users_current_tasks = (CopyOnWriteArrayList<CurrentTasksWrapper>)
-                    xstream.fromXML(new FileInputStream(CURRENT_TASKS_FILE));
-            users_current_tasks.stream().forEach(currentTasks ->
-            {
-                if(currentTasks.getCurrent_tasks() == null)
-                {
-                    currentTasks.setCurrent_tasks(new CopyOnWriteArrayList<>());
-                }
-            });
-            users_completed_tasks = (CopyOnWriteArrayList<CompletedTasksWrapper>)
-                    xstream.fromXML(new FileInputStream(COMPLETED_TASKS_FILE));
-            users_completed_tasks.stream().forEach(completedTasks -> {
-                if(completedTasks.getCompleted_tasks() == null)
-                {
-                    completedTasks.setCompleted_tasks(new CopyOnWriteArrayList<>());
-                }
-            });
-        } catch (FileNotFoundException e) {
-            writeUsers();
-        }
-    }
-
-    /**
-     * Creates and configures xstream instance.
-     * @return  xstream instance.
-     */
-    private static XStream getXStream() {
-        XStream stream = new XStream(new DomDriver("UTF-8"));
-        stream.processAnnotations(User.class);
-        stream.processAnnotations(CurrentTasksWrapper.class);
-        stream.processAnnotations(CompletedTasksWrapper.class);
-        return stream;
     }
 
     /**
@@ -207,8 +154,7 @@ public class XMLUtils {
     /**
      * Writes users, its current and completed tasks to files.
      */
-    private static synchronized void writeUsers()
-    {
+    private static synchronized void writeUsers() {
         XStream stream = getXStream();
         File dir = new File(PATHNAME);
         if(!dir.exists())
@@ -238,5 +184,56 @@ public class XMLUtils {
         catch (IOException e) {
            e.printStackTrace();
         }
+    }
+    /**
+     * Creates and configures xstream instance.
+     * @return  xstream instance.
+     */
+    private static XStream getXStream() {
+        XStream stream = new XStream(new DomDriver("UTF-8"));
+        stream.processAnnotations(User.class);
+        stream.processAnnotations(CurrentTasksWrapper.class);
+        stream.processAnnotations(CompletedTasksWrapper.class);
+        return stream;
+    }
+    /**
+     * Reads user, its current and completed tasks from files.
+     */
+    private static synchronized void readUserFromXML() {
+        XStream xstream = getXStream();
+        users = new CopyOnWriteArrayList<>();
+        users_current_tasks = new CopyOnWriteArrayList<>();
+        users_completed_tasks = new CopyOnWriteArrayList<>();
+        try {
+            users = (CopyOnWriteArrayList) xstream.fromXML(new FileInputStream(USERS_FILE));
+            users_current_tasks = (CopyOnWriteArrayList<CurrentTasksWrapper>)
+                    xstream.fromXML(new FileInputStream(CURRENT_TASKS_FILE));
+            users_current_tasks.stream().forEach(currentTasks ->
+            {
+                if(currentTasks.getCurrent_tasks() == null)
+                {
+                    currentTasks.setCurrent_tasks(new CopyOnWriteArrayList<>());
+                }
+            });
+            users_completed_tasks = (CopyOnWriteArrayList<CompletedTasksWrapper>)
+                    xstream.fromXML(new FileInputStream(COMPLETED_TASKS_FILE));
+            users_completed_tasks.stream().forEach(completedTasks -> {
+                if(completedTasks.getCompleted_tasks() == null)
+                {
+                    completedTasks.setCompleted_tasks(new CopyOnWriteArrayList<>());
+                }
+            });
+        } catch (FileNotFoundException e) {
+            writeUsers();
+        }
+    }
+    /**
+     * Initializes paths of xml files.
+     */
+    private synchronized static void configPaths() {
+        PATHNAME = System.getProperty("user.home") + "/server_impl/";
+        USERS_FILE = PATHNAME + "users.xml";
+        CURRENT_TASKS_FILE = PATHNAME + "current.xml";
+        COMPLETED_TASKS_FILE = PATHNAME +"completed.xml";
     }
 }

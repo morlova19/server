@@ -37,52 +37,6 @@ public class DecryptionUtil {
      * Private key.
      */
     private static PrivateKey privateKey;
-
-    /**
-     * Generates key pair which contains a private and public key.
-     * Writes it into files.
-     */
-    private static void generateKey() {
-        try {
-            final KeyPairGenerator keyGen = KeyPairGenerator.getInstance(ALGO);
-            keyGen.initialize(1024);
-            final KeyPair key = keyGen.generateKeyPair();
-
-            File privateKeyFile = new File(PRIVATE_KEY_FILE);
-            File publicKeyFile = new File(PUBLIC_KEY_FILE);
-
-            privateKeyFile.createNewFile();
-            publicKeyFile.createNewFile();
-
-           PublicKey publicKey = key.getPublic();
-           PrivateKey privateKey = key.getPrivate();
-
-            X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(publicKey.getEncoded());
-            FileOutputStream fos = new FileOutputStream(PUBLIC_KEY_FILE);
-            fos.write(x509EncodedKeySpec.getEncoded());
-            fos.close();
-
-            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKey.getEncoded());
-            fos = new FileOutputStream(PRIVATE_KEY_FILE);
-            fos.write(pkcs8EncodedKeySpec.getEncoded());
-            fos.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Checks if keys already exist.
-     * @return true if exist, else - false.
-     */
-    private static boolean areKeysPresent() {
-
-        File privateKey = new File(PRIVATE_KEY_FILE);
-        File publicKey = new File(PUBLIC_KEY_FILE);
-
-        return privateKey.exists() && publicKey.exists();
-    }
-
     /**
      * Decrypts password using {@link #privateKey}.
      * @param pass encrypted password.
@@ -147,5 +101,47 @@ public class DecryptionUtil {
     {
         return Base64.getEncoder().encodeToString(public_key_bytes);
     }
+    /**
+     * Checks if keys already exist.
+     * @return true if exist, else - false.
+     */
+    private static boolean areKeysPresent() {
 
+        File privateKey = new File(PRIVATE_KEY_FILE);
+        File publicKey = new File(PUBLIC_KEY_FILE);
+
+        return privateKey.exists() && publicKey.exists();
+    }
+    /**
+     * Generates key pair which contains a private and public key.
+     * Writes it into files.
+     */
+    private static void generateKey() {
+        try {
+            final KeyPairGenerator keyGen = KeyPairGenerator.getInstance(ALGO);
+            keyGen.initialize(1024);
+            final KeyPair key = keyGen.generateKeyPair();
+
+            File privateKeyFile = new File(PRIVATE_KEY_FILE);
+            File publicKeyFile = new File(PUBLIC_KEY_FILE);
+
+            privateKeyFile.createNewFile();
+            publicKeyFile.createNewFile();
+
+            PublicKey publicKey = key.getPublic();
+            PrivateKey privateKey = key.getPrivate();
+
+            X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(publicKey.getEncoded());
+            FileOutputStream fos = new FileOutputStream(PUBLIC_KEY_FILE);
+            fos.write(x509EncodedKeySpec.getEncoded());
+            fos.close();
+
+            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKey.getEncoded());
+            fos = new FileOutputStream(PRIVATE_KEY_FILE);
+            fos.write(pkcs8EncodedKeySpec.getEncoded());
+            fos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
