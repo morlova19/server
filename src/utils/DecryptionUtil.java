@@ -125,6 +125,11 @@ public class DecryptionUtil {
             File privateKeyFile = new File(PRIVATE_KEY_FILE);
             File publicKeyFile = new File(PUBLIC_KEY_FILE);
 
+            File dir = new File(PATHNAME);
+            if(!dir.exists())
+            {
+                dir.mkdir();
+            }
             privateKeyFile.createNewFile();
             publicKeyFile.createNewFile();
 

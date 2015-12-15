@@ -191,9 +191,9 @@ public class XMLUtils {
      */
     private static XStream getXStream() {
         XStream stream = new XStream(new DomDriver("UTF-8"));
-        stream.processAnnotations(User.class);
-        stream.processAnnotations(CurrentTasksWrapper.class);
-        stream.processAnnotations(CompletedTasksWrapper.class);
+        stream.processAnnotations(to.User.class);
+        stream.processAnnotations(to.CurrentTasksWrapper.class);
+        stream.processAnnotations(to.CompletedTasksWrapper.class);
         return stream;
     }
     /**
